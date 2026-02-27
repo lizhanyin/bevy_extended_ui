@@ -17,7 +17,7 @@ use bevy::asset::RenderAssetUsages;
 use bevy::asset::{load_internal_asset, uuid_handle};
 use bevy::color::Srgba;
 use bevy::core_pipeline::core_2d::graph::{Core2d, Node2d};
-use bevy::image::ImageSampler;
+use bevy::image::{ImageSampler, TRANSPARENT_IMAGE_HANDLE};
 use bevy::math::Rot2;
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
@@ -1949,6 +1949,9 @@ fn apply_style_components(
             if let Some(path) = bg.image.as_ref() {
                 let handle = get_or_load_image(path.as_str(), image_cache, images, asset_server);
                 img_node.image = handle;
+            } else {
+                // When bg.image is None, use the built-in transparent placeholder image in bevy to clear the existing image
+                img_node.image = TRANSPARENT_IMAGE_HANDLE;
             }
         }
     }
