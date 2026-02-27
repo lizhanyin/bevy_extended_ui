@@ -113,6 +113,12 @@ impl Plugin for HtmlEventBindingsPlugin {
         app.add_observer(on_html_drag);
         app.add_observer(emit_html_drag_stop_events);
         app.add_observer(on_html_drag_stop);
+
+        // observer (mousedown / mouseup)
+        app.add_observer(emit_html_mouse_down_events);
+        app.add_observer(on_html_mouse_down);
+        app.add_observer(emit_html_mouse_up_events);
+        app.add_observer(on_html_mouse_up);
     }
 }
 
@@ -1140,5 +1146,141 @@ pub(crate) fn on_html_drag_stop(
         commands.run_system_with(sys_id, HtmlEvent { entity });
     } else {
         warn!("ondragstop binding '{name}' not registered via #[html_fn(...)]");
+    }
+}
+
+// =================================================
+//                    MouseDown / MouseUp
+// =================================================
+
+/// Emits mouse-down events for widgets with `onmousedown` bindings.
+pub(crate) fn emit_html_mouse_down_events(
+    ev: On<Pointer<Press>>,
+    mut commands: Commands,
+    q_bindings: Query<(
+        &HtmlEventBindings,
+        Option<&UIWidgetState>,
+        Option<&RelativeCursorPosition>,
+        Option<&ComputedNode>,
+    )>,
+) {
+    let entity = ev.event().entity;
+
+    let Ok((bindings, state_opt, rel_pos, node)) = q_bindings.get(entity) else {
+        return;
+    };
+    if let Some(state) = state_opt {
+        if state.disabled {
+            return;
+        }
+    }
+    if bindings.onmousedown.is_some() {
+        let position = ev.pointer_location.position;
+        let inner_position = rel_pos
+            .and_then(|rel| rel.normalized)
+            .map(|norm| {
+                if let Some(node) = node {
+                    Vec2::new(norm.x * node.size.x, norm.y * node.size.y)
+                } else {
+                    norm
+                }
+            })
+            .unwrap_or(position);
+        commands.trigger(HtmlMouseDown {
+            entity,
+            position,
+            inner_position,
+        });
+    }
+}
+
+/// Dispatches registered mouse-down handlers for HTML widgets.
+pub(crate) fn on_html_mouse_down(
+    mousedown: On<HtmlMouseDown>,
+    mut commands: Commands,
+    reg: Res<HtmlFunctionRegistry>,
+    q_bindings: Query<&HtmlEventBindings>,
+) {
+    let entity = mousedown.entity;
+
+    let Ok(bindings) = q_bindings.get(entity) else {
+        return;
+    };
+    let Some(name) = bindings.onmousedown.as_deref() else {
+        return;
+    };
+
+    if let Some(&sys_id) = reg.mousedown_typed.get(name) {
+        commands.run_system_with(sys_id, *mousedown);
+    } else if let Some(&sys_id) = reg.mousedown.get(name) {
+        commands.run_system_with(sys_id, HtmlEvent { entity });
+    } else {
+        warn!("onmousedown binding '{name}' not registered via #[html_fn(...)]");
+    }
+}
+
+/// Emits mouse-up events for widgets with `onmouseup` bindings.
+pub(crate) fn emit_html_mouse_up_events(
+    ev: On<Pointer<Release>>,
+    mut commands: Commands,
+    q_bindings: Query<(
+        &HtmlEventBindings,
+        Option<&UIWidgetState>,
+        Option<&RelativeCursorPosition>,
+        Option<&ComputedNode>,
+    )>,
+) {
+    let entity = ev.event().entity;
+
+    let Ok((bindings, state_opt, rel_pos, node)) = q_bindings.get(entity) else {
+        return;
+    };
+    if let Some(state) = state_opt {
+        if state.disabled {
+            return;
+        }
+    }
+    if bindings.onmouseup.is_some() {
+        let position = ev.pointer_location.position;
+        let inner_position = rel_pos
+            .and_then(|rel| rel.normalized)
+            .map(|norm| {
+                if let Some(node) = node {
+                    Vec2::new(norm.x * node.size.x, norm.y * node.size.y)
+                } else {
+                    norm
+                }
+            })
+            .unwrap_or(position);
+        commands.trigger(HtmlMouseUp {
+            entity,
+            position,
+            inner_position,
+        });
+    }
+}
+
+/// Dispatches registered mouse-up handlers for HTML widgets.
+pub(crate) fn on_html_mouse_up(
+    mouseup: On<HtmlMouseUp>,
+    mut commands: Commands,
+    reg: Res<HtmlFunctionRegistry>,
+    q_bindings: Query<&HtmlEventBindings>,
+) {
+    let entity = mouseup.entity;
+
+    let Ok(bindings) = q_bindings.get(entity) else {
+        return;
+    };
+    let Some(name) = bindings.onmouseup.as_deref() else {
+        return;
+    };
+
+    if let Some(&sys_id) = reg.mouseup_typed.get(name) {
+        commands.run_system_with(sys_id, *mouseup);
+    } else if let Some(&sys_id) = reg.mouseup.get(name) {
+        commands.run_system_with(sys_id, HtmlEvent { entity });
+    } else {
+        warn!("onmouseup binding '{name}' not registered via #[html_fn(...)]");
     }
 }

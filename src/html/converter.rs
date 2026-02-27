@@ -990,6 +990,8 @@ fn bind_html_func(attributes: &Attributes) -> HtmlEventBindings {
             .get("ondragstop")
             .or_else(|| attributes.get("ondragend"))
             .map(|s| s.to_string()),
+        onmousedown: attributes.get("onmousedown").map(|s| s.to_string()),
+        onmouseup: attributes.get("onmouseup").map(|s| s.to_string()),
     }
 }
 

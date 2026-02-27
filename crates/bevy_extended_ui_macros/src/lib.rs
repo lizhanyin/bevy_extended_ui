@@ -121,6 +121,8 @@ fn extract_event_type(input_fn: &ItemFn) -> Result<Option<(syn::Ident, Type)>> {
         "HtmlDragStart" => format_ident!("HtmlDragStart"),
         "HtmlDrag" => format_ident!("HtmlDrag"),
         "HtmlDragStop" => format_ident!("HtmlDragStop"),
+        "HtmlMouseDown" => format_ident!("HtmlMouseDown"),
+        "HtmlMouseUp" => format_ident!("HtmlMouseUp"),
         _ => {
             return Err(syn::Error::new_spanned(
                 &event_ident,

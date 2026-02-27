@@ -19,6 +19,8 @@ Use these attributes in your HTML:
 - `ondragstart`
 - `ondrag`
 - `ondragstop` (alias: `ondragend`)
+- `onmousedown`
+- `onmouseup`
 
 ## Using handlers
 
@@ -86,3 +88,9 @@ All events include `target` (the Bevy `Entity` that fired the event).
 
 - `target`
 - `position`: screen-space pointer position
+
+### HtmlMouseDown / HtmlMouseUp
+
+- `target`
+- `position`: screen-space pointer position
+- `inner_position`: pointer position inside the target (best effort; falls back to `position`)
