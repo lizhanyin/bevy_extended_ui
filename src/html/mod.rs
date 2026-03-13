@@ -502,6 +502,14 @@ pub enum HtmlFnRegistration {
         name: &'static str,
         build: fn(&mut World) -> SystemId<In<HtmlDragStop>, ()>,
     },
+    HtmlMouseDown {
+        name: &'static str,
+        build: fn(&mut World) -> SystemId<In<HtmlMouseDown>, ()>,
+    },
+    HtmlMouseUp {
+        name: &'static str,
+        build: fn(&mut World) -> SystemId<In<HtmlMouseUp>, ()>,
+    },
 }
 
 inventory::collect!(HtmlFnRegistration);
@@ -535,6 +543,8 @@ pub struct HtmlFunctionRegistry {
     pub dragstart: HashMap<String, SystemId<In<HtmlEvent>>>,
     pub drag: HashMap<String, SystemId<In<HtmlEvent>>>,
     pub dragstop: HashMap<String, SystemId<In<HtmlEvent>>>,
+    pub mousedown: HashMap<String, SystemId<In<HtmlEvent>>>,
+    pub mouseup: HashMap<String, SystemId<In<HtmlEvent>>>,
     pub click_typed: HashMap<String, SystemId<In<HtmlClick>>>,
     pub over_typed: HashMap<String, SystemId<In<HtmlMouseOver>>>,
     pub out_typed: HashMap<String, SystemId<In<HtmlMouseOut>>>,
@@ -548,6 +558,8 @@ pub struct HtmlFunctionRegistry {
     pub dragstart_typed: HashMap<String, SystemId<In<HtmlDragStart>>>,
     pub drag_typed: HashMap<String, SystemId<In<HtmlDrag>>>,
     pub dragstop_typed: HashMap<String, SystemId<In<HtmlDragStop>>>,
+    pub mousedown_typed: HashMap<String, SystemId<In<HtmlMouseDown>>>,
+    pub mouseup_typed: HashMap<String, SystemId<In<HtmlMouseUp>>>,
 }
 
 /// Component storing event handler names attached in HTML.
@@ -566,6 +578,8 @@ pub struct HtmlEventBindings {
     pub ondragstart: Option<String>,
     pub ondrag: Option<String>,
     pub ondragstop: Option<String>,
+    pub onmousedown: Option<String>,
+    pub onmouseup: Option<String>,
 }
 
 /// Click event sent from HTML widgets.
@@ -687,6 +701,24 @@ pub struct HtmlDragStop {
     #[event_target]
     pub entity: Entity,
     pub position: Vec2,
+}
+
+/// Mouse-down event emitted by HTML widgets.
+#[derive(EntityEvent, Clone, Copy)]
+pub struct HtmlMouseDown {
+    #[event_target]
+    pub entity: Entity,
+    pub position: Vec2,
+    pub inner_position: Vec2,
+}
+
+/// Mouse-up event emitted by HTML widgets.
+#[derive(EntityEvent, Clone, Copy)]
+pub struct HtmlMouseUp {
+    #[event_target]
+    pub entity: Entity,
+    pub position: Vec2,
+    pub inner_position: Vec2,
 }
 
 /// Main plugin for HTML UI: converter + builder + reload integration.
@@ -832,6 +864,20 @@ pub fn register_html_fns(world: &mut World) {
                     .dragstop_typed
                     .insert((*name).to_string(), id);
             }
+            HtmlFnRegistration::HtmlMouseDown { name, build } => {
+                let id = (*build)(world);
+                world
+                    .resource_mut::<HtmlFunctionRegistry>()
+                    .mousedown_typed
+                    .insert((*name).to_string(), id);
+            }
+            HtmlFnRegistration::HtmlMouseUp { name, build } => {
+                let id = (*build)(world);
+                world
+                    .resource_mut::<HtmlFunctionRegistry>()
+                    .mouseup_typed
+                    .insert((*name).to_string(), id);
+            }
         }
     }
 
@@ -848,6 +894,8 @@ pub fn register_html_fns(world: &mut World) {
         reg.dragstart.insert(name.clone(), id);
         reg.drag.insert(name.clone(), id);
         reg.dragstop.insert(name.clone(), id);
+        reg.mousedown.insert(name.clone(), id);
+        reg.mouseup.insert(name.clone(), id);
         reg.out.insert(name.clone(), id);
         reg.over.insert(name.clone(), id);
         debug!("Registered html fn '{name}' with id {id:?}");
